@@ -1,4 +1,4 @@
-module github.com/PreetSIngh8929/bookstore_utils-go
+module github.com/PreetSIngh8929/boookstore_utils-go
 
 go 1.18
 
