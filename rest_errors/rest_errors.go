@@ -2,48 +2,76 @@ package rest_errors
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 )
 
-type RestErr struct {
-	Message string        `json:"message"`
-	Status  int           `json:"status"`
-	Error   string        `json:"error"`
-	Causes  []interface{} `json:"causes"`
+type RestErr interface {
+	Message() string
+	Status() int
+	Error() string
+	Causes() []interface{}
+}
+type restErr struct {
+	message string
+	status  int
+	error   string
+	causes  []interface{}
 }
 
+func (e restErr) Message() string {
+	return e.message
+}
+func (e restErr) Status() int {
+	return e.status
+}
+func (e restErr) Causes() []interface{} {
+	return e.causes
+}
+func (e restErr) Error() string {
+	return fmt.Sprintf("message: %s - status:%d -error:%s -Causes:[ %v ]", e.message, e.status, e.error, e.causes)
+}
 func NewError(msg string) error {
 	return errors.New(msg)
 }
-func NewBadRequestError(message string) *RestErr {
-	return &RestErr{
-		Message: message,
-		Status:  http.StatusBadRequest,
-		Error:   "bad_request",
+
+func NewRestError(message string, status int, err string, causes []interface{}) RestErr {
+	return restErr{
+		message: message,
+		status:  status,
+		error:   err,
+		causes:  causes,
 	}
 }
-func NewNotFoundError(message string) *RestErr {
-	return &RestErr{
-		Message: message,
-		Status:  http.StatusNotFound,
-		Error:   "not_found",
+func NewBadRequestError(message string) RestErr {
+	return restErr{
+		message: message,
+		status:  http.StatusBadRequest,
+		error:   "bad_request",
 	}
 }
-func NewUnauthorizedError(message string) *RestErr{
-	return &RestErr{
-		Message:"unable to retrieve user info. from given access_token",
-		Status: http.StatusUnauthorized,
-		Error:"unauthorized",
+func NewNotFoundError(message string) RestErr {
+	return restErr{
+		message: message,
+		status:  http.StatusNotFound,
+		error:   "not_found",
 	}
 }
-func NewInternalServerError(message string, err error) *RestErr {
-	result := &RestErr{
-		Message: message,
-		Status:  http.StatusInternalServerError,
-		Error:   "internal_server_error",
+func NewUnauthorizedError(message string) RestErr {
+	return restErr{
+		message: "unable to retrieve user info. from given access_token",
+		status:  http.StatusUnauthorized,
+		error:   "unauthorized",
+	}
+}
+func NewInternalServerError(message string, err error) RestErr {
+	result := restErr{
+		message: message,
+		status:  http.StatusInternalServerError,
+		error:   "internal_server_error",
 	}
 	if err != nil {
-		result.Causes = append(result.Causes, err.Error())
+		result.causes = append(result.causes, err.Error())
 	}
 	return result
 }
